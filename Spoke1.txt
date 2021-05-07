@@ -1,0 +1,36 @@
+hostname Spoke1
+!
+interface GigabitEthernet0/0
+ ip add 100.64.0.11 255.255.255.0
+ no shutdown
+!
+ip route 0.0.0.0 0.0.0.0 100.64.0.1
+!
+crypto ikev2 keyring Keys
+ peer HUB1
+  address 80.80.80.1
+  pre-shared-key secret_key_over_16_chars
+!
+crypto ikev2 profile spoke_ikev2_profile
+ match address local interface GigabitEthernet0/0
+ match identity remote fqdn hub1.example.com
+ identity local fqdn spoke1.spokes.example.com
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local Keys
+ dpd 20 2 periodic
+!
+crypto ipsec profile spoke_ipsec_profile
+ set security-association lifetime kilobytes disable
+ set pfs group14
+ set ikev2-profile spoke_ikev2_profile
+!
+interface Tunnel1
+ ip address 192.168.1.11 255.255.255.0
+ ip tcp adjust-mss 1379
+ keepalive 10 3
+ tunnel source GigabitEthernet0/0
+ tunnel mode ipsec ipv4
+ tunnel destination 80.80.80.1
+ tunnel protection ipsec profile spoke_ipsec_profile
+!

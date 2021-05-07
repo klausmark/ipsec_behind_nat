@@ -1,0 +1,42 @@
+hostname HUB1
+!
+interface GigabitEthernet0/0
+ ip add 80.80.80.1 255.255.255.0
+ no shutdown
+!
+interface Loop0
+ ip add 192.168.1.1 255.255.255.0
+!
+crypto ikev2 keyring Spokes
+ peer Spoke1
+  identity fqdn spoke1.spokes.example.com
+  pre-shared-key secret_key_over_16_chars
+ !
+ peer Spoke2
+  identity fqdn spoke2.spokes.example.com
+  pre-shared-key secret_key_over_16_chars
+ !
+!
+crypto ikev2 profile hub_ikev2_profile
+ match address local interface Gi0/0
+ match identity remote fqdn domain spokes.example.com
+ identity local fqdn hub1.example.com
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local Spokes
+ dpd 10 2 on-demand
+ virtual-template 1
+!
+crypto ipsec profile hub_ipsec_profile
+ set security-association lifetime kilobytes disable
+ set pfs group14
+ set ikev2-profile hub_ikev2_profile
+ responder-only
+!
+interface Virtual-Template1 type tunnel
+ ip unnumbered Loop0
+ tunnel source GigabitEthernet0/0
+ tunnel mode ipsec ipv4
+ tunnel destination dynamic
+ tunnel protection ipsec profile hub_ipsec_profile
+!

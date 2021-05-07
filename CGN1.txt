@@ -1,0 +1,17 @@
+hostname CGN1
+!
+interface GigabitEthernet0/0
+ ip address 80.80.80.80 255.255.255.0
+ ip nat outside
+ no shutdown
+!
+interface GigabitEthernet0/1
+ ip address 100.64.0.1 255.255.255.0
+ ip nat inside
+ no shutdown
+!
+ip nat inside source list ACL_NAT interface GigabitEthernet0/0 overload
+!
+ip access-list standard ACL_NAT
+ permit 100.64.0.0 0.0.0.255
+!
