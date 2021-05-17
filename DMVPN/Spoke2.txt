@@ -1,0 +1,62 @@
+no interface Tunnel1
+no crypto ipsec profile ipsec_profile
+no crypto ikev2 profile ikev2_profile
+no crypto ikev2 keyring keyring
+!
+hostname Spoke2-DMVPN
+!
+no ip domain lookup
+!
+bfd-template single-hop bfd-template_DMVPN
+ interval min-tx 50 min-rx 50 multiplier 3
+!
+crypto ikev2 keyring keyring
+ peer HUB1
+  address 80.80.80.1
+  identity fqdn hub1.example.com
+  pre-shared-key DMVPN_secret_key_over_16_chars
+ !
+ peer Spokes
+  identity fqdn domain spokes.example.com
+  pre-shared-key DMVPN_secret_key_over_16_chars
+ !
+!
+crypto ikev2 profile ikev2_profile
+ match identity remote any
+ identity local fqdn spoke2.spokes.example.com
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local keyring
+!
+crypto ipsec profile ipsec_profile
+ set ikev2-profile ikev2_profile
+!
+interface Tunnel1
+ ip address 192.168.1.12 255.255.255.0
+ no ip redirects
+ ip nhrp map 192.168.1.1 80.80.80.1
+ ip nhrp map multicast 80.80.80.1
+ ip nhrp registration timeout 120
+ ip nhrp shortcut
+ ip nhrp network-id 1
+ ip nhrp nhs 192.168.1.1
+ ip ospf 1 area 0
+ bfd template bfd-template_DMVPN
+ tunnel source GigabitEthernet0/0
+ tunnel mode gre multipoint
+ tunnel protection ipsec profile ipsec_profile
+!
+interface GigabitEthernet0/0
+ ip address 100.64.0.12 255.255.255.0
+ no shut
+!
+router ospf 1
+ passive-interface default
+ no passive-interface Tunnel1
+ bfd all-interfaces
+!
+ip route 0.0.0.0 0.0.0.0 100.64.0.1
+!
+line con 0
+ privilege level 15
+ logging synchronous
