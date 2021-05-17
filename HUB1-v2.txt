@@ -1,0 +1,44 @@
+enable
+conf t
+!
+line con 0  
+ privilege level 15
+ logging synchronous
+!
+no ip domain lookup
+!
+hostname HUB1
+!
+interface GigabitEthernet0/0
+ ip add 80.80.80.1 255.255.255.0
+ no shutdown
+!
+crypto ikev2 keyring keyring
+ peer Spoke1
+  identity fqdn spoke1.spokes.example.com
+  pre-shared-key secret_key_over_16_chars
+ !
+ peer Spoke2
+  identity fqdn spoke2.spokes.example.com
+  pre-shared-key secret_key_over_16_chars
+ !
+!
+crypto ikev2 profile ikev2_profile
+ match identity remote fqdn domain spokes.example.com
+ identity local fqdn hub1.example.com
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local keyring
+!
+crypto ipsec profile ipsec_profile
+ set ikev2-profile ikev2_profile
+ ! responder-only !!! This might be the key !!!
+!
+interface Tunnel1
+ ip address 192.168.1.1 255.255.255.0
+ no ip redirects
+ ip nhrp network-id 1
+ tunnel source GigabitEthernet0/0
+ tunnel mode gre multipoint
+ tunnel protection ipsec profile ipsec_profile
+!

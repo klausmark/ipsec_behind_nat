@@ -15,31 +15,28 @@ interface GigabitEthernet0/0
 !
 ip route 0.0.0.0 0.0.0.0 100.64.0.1
 !
-crypto ikev2 keyring Keys
+crypto ikev2 keyring keyring
  peer HUB1
   address 80.80.80.1
+  identity fqdn hub1.example.com
   pre-shared-key secret_key_over_16_chars
 !
-crypto ikev2 profile spoke_ikev2_profile
- match address local interface GigabitEthernet0/0
+crypto ikev2 profile ikev2_profile
  match identity remote fqdn hub1.example.com
  identity local fqdn spoke1.spokes.example.com
  authentication remote pre-share
  authentication local pre-share
- keyring local Keys
- dpd 20 2 periodic
+ keyring local keyring
 !
-crypto ipsec profile spoke_ipsec_profile
- set security-association lifetime kilobytes disable
- set pfs group14
- set ikev2-profile spoke_ikev2_profile
+crypto ipsec profile ipsec_profile
+ set ikev2-profile ikev2_profile
+ ! responder-only !!! This might be the key !!!
 !
 interface Tunnel1
- ip address 192.168.1.11 255.255.255.0
- ip tcp adjust-mss 1379
- keepalive 10 3
+ ip address 192.168.1.10 255.255.255.0
+ no ip redirects
+ ip nhrp network-id 1
  tunnel source GigabitEthernet0/0
- tunnel mode ipsec ipv4
- tunnel destination 80.80.80.1
- tunnel protection ipsec profile spoke_ipsec_profile
+ tunnel mode gre multipoint
+ tunnel protection ipsec profile ipsec_profile
 !

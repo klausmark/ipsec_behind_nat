@@ -1,0 +1,7 @@
+interface Tunnel2
+ ip address 192.168.2.1 255.255.255.0
+ tunnel source GigabitEthernet0/0
+ tunnel destination 80.80.80.80
+ tunnel key 2
+ tunnel protection ipsec profile hub_ipsec_profile shared
+!

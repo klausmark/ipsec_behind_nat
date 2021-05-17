@@ -1,3 +1,12 @@
+enable
+conf t
+!
+line con 0
+ privilege level 15
+ logging synchronous
+!
+no ip domain lookup
+!
 hostname Spoke2
 !
 interface GigabitEthernet0/0
